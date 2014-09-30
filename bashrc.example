@@ -1,0 +1,7 @@
+# Replace with your own defaults
+export NODE_HALL_URL='https://hall.com'
+export NODE_HALL_API_URL='https://hall.com/api/1'
+export NODE_HALL_STREAMING_URL='https://stream.hall.com'
+export NODE_HALL_STREAMING_WS_URL='wss://stream.hall.com'
+export HALL_EMAIL='foo@hall-inc.com'
+export HALL_PASSWORD='barbaz'
