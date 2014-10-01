@@ -32,19 +32,50 @@
    :websocket nil
    :heartbeat-task nil})
 
+;; ==============
+;; Client options
+;; ==============
+
+(defn get-options
+  [client]
+  (or (:options client) {}))
+
+(defn get-callbacks
+  [client]
+  (or (:callbacks (get-options client)) {}))
+
+(defn get-callback
+  [client callback-key]
+  (let [callbacks (get-callbacks client)
+        callback (callback-key callbacks)
+        default-callback (fn [& rest])]
+    (if (nil? callback)
+      default-callback
+      callback)))
+
 ;; =================
 ;; Client attributes
 ;; =================
 
+;; NOTE: For testing
+(defn getenv
+  "Get an environment variable by key."
+  [key]
+  (System/getenv key))
+
 (defn get-email
   "Fetch the user's hall email from the HALL_EMAIL environment variable."
-  []
-  (or (System/getenv "HALL_EMAIL") "foo@hall-inc.com"))
+  ([]
+   (or (getenv "HALL_EMAIL") "foo@hall-inc.com"))
+  ([client]
+   (or (:email (get-options client)) (get-email))))
 
 (defn get-password
   "Fetch the user's hall password from the HALL_PASSWORD environment variable."
-  []
-  (or (System/getenv "HALL_PASSWORD") "barbaz"))
+  ([]
+   (or (getenv "HALL_PASSWORD") "barbaz"))
+  ([client]
+   (or (:password (get-options client)) (get-password))))
 
 (defn get-authenticity-token
   "Once the user has made the start request, fetch the auth token out of the
@@ -56,7 +87,10 @@
   "Once the user has made the init request, fetch the socket id out of the
   client object."
   [client]
-  (first (clojure.string/split (:init-response-body client) #":")))
+  (let [body (:init-response-body client)]
+    (if (nil? body)
+      nil
+      (first (clojure.string/split body #":")))))
 
 (defn get-user-session-id
   "Once the user has signed in, fetch the session id out of the client object."
@@ -97,27 +131,6 @@
             :native false
             :admin false}
    :member_uuid (get-user-uuid client)})
-
-;; ==============
-;; Client options
-;; ==============
-
-(defn get-options
-  [client]
-  (or (:options client) {}))
-
-(defn get-callbacks
-  [client]
-  (or (:callbacks (get-options client)) {}))
-
-(defn get-callback
-  [client callback-key]
-  (let [callbacks (get-callbacks client)
-        callback (callback-key callbacks)
-        default-callback (fn [& rest])]
-    (if (nil? callback)
-      default-callback
-      callback)))
 
 ;; ====
 ;; Urls
@@ -259,7 +272,7 @@
 ;; Message sending
 ;; ===============
 
-(defn send-message
+(defn send-message!
   ([client room-id room-type message]
    (send-message client room-id room-type message nil))
   ([client room-id room-type message correspondent]
@@ -417,7 +430,7 @@
     (println "pair rooms" (chats-request! client))
 
     ; Send a message to a group room
-    (println (send-message client room-id "group" "Hello, world!"))
+    (println (send-message! client room-id "group" "Hello, world!"))
 
     ; Disconnect the client (commented out)
     (comment (disconnect! client))))

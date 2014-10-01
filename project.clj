@@ -13,5 +13,6 @@
                  [org.java-websocket/Java-WebSocket "1.3.0"]
                  [clj-http "1.0.0"]
                  [org.clojure/data.json "0.2.5"]
-                 [digest "1.4.4"]])
+                 [digest "1.4.4"]
+                 [org.clojars.runa/conjure "2.1.3"]])
 
