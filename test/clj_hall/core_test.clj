@@ -60,13 +60,73 @@
 ;; TODO: Test `get-user-photo-url`
 ;; TODO: Test `get-member-data`
 
-;; TODO: Test `get-base-url`
-;; TODO: Test `get-api-base-url`
-;; TODO: Test `get-stream-base-url`
-;; TODO: Test `get-stream-ws-base-url`
-;; TODO: Test `get-test-room-id`
+(deftest get-base-url-test
+  (testing "has a default value"
+    (stubbing [getenv (fn [key] nil)]
+      (is (= "https://hall.com" (get-base-url)))))
+  (testing "reads from env if NODE_HALL_URL env variable is defined"
+    (stubbing [getenv (fn [key] "https://other.hall.com")]
+      (is (= "https://other.hall.com" (get-base-url)))))
+  (testing "reads from client options if possible"
+    (is (= "https://other.hall.com"
+           (get-base-url {:options {:base-url "https://other.hall.com"}})))
+    (is (= "https://hall.com"
+           (get-base-url {:options {}})))
+    (is (= "https://hall.com"
+           (get-base-url {})))))
+
+(deftest get-api-base-url-test
+  (testing "has a default value"
+    (stubbing [getenv (fn [key] nil)]
+      (is (= "https://hall.com/api/1" (get-api-base-url)))))
+  (testing "reads from env if NODE_HALL_URL env variable is defined"
+    (stubbing [getenv (fn [key] "https://other.hall.com/api/1")]
+      (is (= "https://other.hall.com/api/1" (get-api-base-url)))))
+  (testing "reads from client options if possible"
+    (let [client {:options {:api-url "https://other.hall.com/api/1"}}]
+      (is (= "https://other.hall.com/api/1"
+             (get-api-base-url client))))
+    (is (= "https://hall.com/api/1"
+           (get-api-base-url {:options {}})))
+    (is (= "https://hall.com/api/1"
+           (get-api-base-url {})))))
+
+(deftest get-stream-base-url-test
+  (testing "has a default value"
+    (stubbing [getenv (fn [key] nil)]
+      (is (= "https://stream.hall.com" (get-stream-base-url)))))
+  (testing "reads from env if NODE_HALL_URL env variable is defined"
+    (stubbing [getenv (fn [key] "https://stream-2.hall.com")]
+      (is (= "https://stream-2.hall.com" (get-stream-base-url)))))
+  (testing "reads from client options if possible"
+    (let [client {:options {:streaming-url "https://stream-2.hall.com"}}]
+      (is (= "https://stream-2.hall.com"
+             (get-stream-base-url client))))
+    (is (= "https://stream.hall.com"
+           (get-stream-base-url {:options {}})))
+    (is (= "https://stream.hall.com"
+           (get-stream-base-url {})))))
+
+(deftest get-stream-ws-base-url-test
+  (testing "has a default value"
+    (stubbing [getenv (fn [key] nil)]
+      (is (= "wss://stream.hall.com" (get-stream-ws-base-url)))))
+  (testing "reads from env if NODE_HALL_URL env variable is defined"
+    (stubbing [getenv (fn [key] "wss://stream-2.hall.com")]
+      (is (= "wss://stream-2.hall.com" (get-stream-ws-base-url)))))
+  (testing "reads from client options if possible"
+    (let [client {:options {:streaming-ws-url "wss://stream-2.hall.com"}}]
+      (is (= "wss://stream-2.hall.com"
+             (get-stream-ws-base-url client))))
+    (is (= "wss://stream.hall.com"
+           (get-stream-ws-base-url {:options {}})))
+    (is (= "wss://stream.hall.com"
+           (get-stream-ws-base-url {})))))
+
 ;; TODO: Test `get-stream-base-url-with-params`
 ;; TODO: Test `get-stream-ws-url-with-params`
+
+;; TODO: Test `get-test-room-id`
 
 ;; TODO: Test `start-request!`
 ;; TODO: Test `signin-request!`

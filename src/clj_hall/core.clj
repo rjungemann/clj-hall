@@ -138,28 +138,32 @@
 
 (defn get-base-url
   "Fetch the Hall base URL from the NODE_HALL_URL environment variable."
-  []
-  (or (System/getenv "NODE_HALL_URL") "https://hall.com"))
+  ([]
+   (or (getenv "NODE_HALL_URL") "https://hall.com"))
+  ([client]
+   (or (:base-url (get-options client)) (get-base-url))))
 
 (defn get-api-base-url
   "Fetch the Hall API base URL from the NODE_HALL_URL environment variable."
-  []
-  (or (System/getenv "NODE_HALL_API_URL") "https://hall.com/api/1"))
+  ([]
+   (or (getenv "NODE_HALL_API_URL") "https://hall.com/api/1"))
+  ([client]
+   (or (:api-url (get-options client)) (get-api-base-url))))
 
 (defn get-stream-base-url
   "Fetch the Hall stream base URL from the NODE_HALL_URL environment variable."
-  []
-  (or (System/getenv "NODE_HALL_STREAMING_URL") "https://stream.hall.com"))
+  ([]
+   (or (getenv "NODE_HALL_STREAMING_URL") "https://stream.hall.com"))
+  ([client]
+   (or (:streaming-url (get-options client)) (get-stream-base-url))))
 
 (defn get-stream-ws-base-url
   "Fetch the Hall websocket base URL from the NODE_HALL_URL environment
   variable."
-  []
-  (or (System/getenv "NODE_HALL_STREAMING_WS_URL") "wss://stream.hall.com"))
-
-(defn get-test-room-id
-  []
-  (or (System/getenv "HALL_TEST_ROOM_ID") "12345"))
+  ([]
+   (or (getenv "NODE_HALL_STREAMING_WS_URL") "wss://stream.hall.com"))
+  ([client]
+   (or (:streaming-ws-url (get-options client)) (get-stream-ws-base-url))))
 
 (defn get-stream-base-url-with-params
   "Fetch the Hall stream URL with all necessary params."
@@ -189,6 +193,10 @@
          "user_session_id=" user-session-id
          "&id=" uuid
          "&session=" session)))
+
+(defn get-test-room-id
+  []
+  (or (System/getenv "HALL_TEST_ROOM_ID") "12345"))
 
 ;; ===============
 ;; Request methods
@@ -274,7 +282,7 @@
 
 (defn send-message!
   ([client room-id room-type message]
-   (send-message client room-id room-type message nil))
+   (send-message! client room-id room-type message nil))
   ([client room-id room-type message correspondent]
    (let [body-data (if (nil? correspondent)
                      {:type "Comment"
