@@ -40,7 +40,10 @@ Following is an example script you can use to try out clj-hall.
     (println "pair rooms" (hall/chats-request! client))
 
     ; Send a message to a group room
-    (println (hall/send-message client room-id "group" "Hello, world!"))))
+    (println (hall/send-message client room-id "group" "Hello, world!"))
+    
+    ; Disconnect the client (commented out)
+    (comment (hall/disconnect! client))))
 ```
 
 ## License

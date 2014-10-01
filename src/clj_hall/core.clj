@@ -7,7 +7,8 @@
            (org.java_websocket.drafts Draft_17)
            (java.util TimerTask Timer)))
 
-;; TODO: Disconnecting
+;; TODO: Also allow for blocking connect and disconnect
+;; TODO: Expose methods for seeing if connected and if disconnected
 ;; TODO: Client-side heartbeat
 ;; TODO: Debugging
 ;; TODO: Finish documenting methods
@@ -383,23 +384,41 @@
               setup-socket
               connect-to-socket!))
 
+(defn disconnect!
+  [client]
+  (.close (:websocket client))
+  client)
+
 ;; ====
 ;; Main
 ;; ====
 
 (defn -main
   [& args]
-  (let [options {:callbacks {:on-open #(println "CALLBACK open")
+  (let [; Options hash contains some callback functions
+        options {:callbacks {:on-open #(println "CALLBACK open")
                              :on-close #(println "CALLBACK closed")
                              :on-message #(println "CALLBACK message" %)
                              :on-error #(println "CALLBACK error" %)}}
+
+        ; Room ID populated from the bashrc file
+        room-id (get-test-room-id)
+
+        ; Construct a client object and connect to Hall
         client (->> (client options) connect!)]
+
+    ; Fetch a list of group rooms
     (println "group rooms" (rooms-request! client))
-    (println "room members" (room-members-request! (get-test-room-id)
-                                                   client))
+
+    ; Fetch a list of room members for a room
+    (println "room members" (room-members-request! room-id client))
+
+    ; Fetch a list of pair rooms
     (println "pair rooms" (chats-request! client))
-    (println (send-message client
-                           (get-test-room-id)
-                           "group"
-                           "Hello, world!"))))
+
+    ; Send a message to a group room
+    (println (send-message client room-id "group" "Hello, world!"))
+
+    ; Disconnect the client (commented out)
+    (comment (disconnect! client))))
 
