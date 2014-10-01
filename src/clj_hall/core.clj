@@ -10,6 +10,8 @@
 ;; TODO: Disconnecting
 ;; TODO: Client-side heartbeat
 ;; TODO: Sending messages
+;; TODO: Finish documenting methods
+;; TODO: Finish README
 
 ;; =============
 ;; Client object
@@ -141,6 +143,10 @@
   []
   (or (System/getenv "NODE_HALL_STREAMING_WS_URL") "wss://stream.hall.com"))
 
+(defn get-test-room-id
+  []
+  (or (System/getenv "HALL_TEST_ROOM_ID") "12345"))
+
 (defn get-stream-base-url-with-params
   "Fetch the Hall stream URL with all necessary params."
   [client]
@@ -219,6 +225,10 @@
     (assoc client :init-response response
                   :init-response-body response-body)))
 
+;; ======================
+;; Public request methods
+;; ======================
+
 (defn rooms-request!
   "Fetch a list of rooms. Requires signing in."
   [client]
@@ -243,6 +253,32 @@
                           "user_api_token=" (get-user-token client))
         response-options {:cookie-store (:cookie-store client)}]
     (clj-http.client/get response-url response-options)))
+
+;; ===============
+;; Message sending
+;; ===============
+
+(defn send-message
+  ([client room-id room-type message]
+   (send-message client room-id room-type message nil))
+  ([client room-id room-type message correspondent]
+   (let [body-data (if (nil? correspondent)
+                     {:type "Comment"
+                      :message {:plain message}}
+                     {:type "Comment"
+                      :message {:plain message}
+                      :correspondent_id correspondent})
+         response-headers {"User-Agent" "Hall-Node-Client/1.0.2"
+                           "Content-Type" "application/json"
+                           "Accept" "application/json"
+                           "X-CSRF-Token" (get-authenticity-token client)}
+         response-url (str (get-api-base-url) "/rooms/" room-type "s/"
+                           room-id "/room_items?"
+                           "user_api_token=" (get-user-token client))
+         response-options {:body (clojure.data.json/write-str body-data)
+                           :headers response-headers
+                           :cookie-store (:cookie-store client)}]
+     (clj-http.client/post response-url response-options))))
 
 ;; ==============
 ;; Socket methods
@@ -335,6 +371,18 @@
   (.connect (:websocket client))
   client)
 
+;; =====================
+;; Public socket methods
+;; =====================
+
+(defn connect!
+  [client]
+  (->> client start-request!
+              signin-request!
+              init-request!
+              setup-socket
+              connect-to-socket!))
+
 ;; ====
 ;; Main
 ;; ====
@@ -345,11 +393,13 @@
                              :on-close #(println "CALLBACK closed")
                              :on-message #(println "CALLBACK message" %)
                              :on-error #(println "CALLBACK error" %)}}
-        client (->> (client options) start-request!
-                                     signin-request!
-                                     init-request!
-                                     setup-socket
-                                     connect-to-socket!)
-        rooms (rooms-request! client)]
-    (println "rooms" rooms))
+        client (->> (client options) connect!)]
+    (println "group rooms" (rooms-request! client))
+    (println "room members" (room-members-request! (get-test-room-id)
+                                                   client))
+    (println "pair rooms" (chats-request! client))
+    (println (send-message client
+                           (get-test-room-id)
+                           "group"
+                           "Hello, world!"))))
 

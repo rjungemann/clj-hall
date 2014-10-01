@@ -1,7 +1,33 @@
-# Replace with your own defaults
-export NODE_HALL_URL='https://hall.com'
-export NODE_HALL_API_URL='https://hall.com/api/1'
-export NODE_HALL_STREAMING_URL='https://stream.hall.com'
-export NODE_HALL_STREAMING_WS_URL='wss://stream.hall.com'
+# NOTE:
+#
+# Rename this file to `bashrc` and replace with your own defaults.
+#
+# Run `source bashrc` to populate the environment variables.
+#
+# Alternatively, set the environment variables before running your script. For
+# example:
+#
+#    HALL_EMAIL='foo@hall-inc.com' HALL_PASSWORD='barbaz' path/to/script
+
+# ---------------------------------------------------
+# Server URLS (You normally do not need to set these)
+# ---------------------------------------------------
+
+# export NODE_HALL_URL='https://hall.com'
+# export NODE_HALL_API_URL='https://hall.com/api/1'
+# export NODE_HALL_STREAMING_URL='https://stream.hall.com'
+# export NODE_HALL_STREAMING_WS_URL='wss://stream.hall.com'
+
+# ------------------------------------------------------
+# Test variables (You normally do not need to set these)
+# ------------------------------------------------------
+
+export HALL_TEST_ROOM_ID='barbaz'
+
+# ----------------------------------
+# Credentials (You should set these)
+# ----------------------------------
+
 export HALL_EMAIL='foo@hall-inc.com'
 export HALL_PASSWORD='barbaz'
+
