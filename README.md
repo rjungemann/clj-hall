@@ -12,35 +12,36 @@ environment variables.
 
 Following is an example script you can use to try out clj-hall.
 
-    (ns sample.core
-      (:require [clj-hall.core :as hall]))
+```clojure
+(ns sample.core
+  (:require [clj-hall.core :as hall]))
 
-    (defn -main
-      [& args]
-      (let [options {:callbacks {:on-open #(println "CALLBACK open")
-                                 :on-close #(println "CALLBACK closed")
-                                 :on-message #(println "CALLBACK message" %)
-                                 :on-error #(println "CALLBACK error" %)}}
-            room-id (hall/get-test-room-id)
+(defn -main
+  [& args]
+  (let [; Options hash contains some callback functions
+        options {:callbacks {:on-open #(println "CALLBACK open")
+                             :on-close #(println "CALLBACK closed")
+                             :on-message #(println "CALLBACK message" %)
+                             :on-error #(println "CALLBACK error" %)}}
 
-            ; Construct a client object and connect to Hall
-            client (->> (hall/client options) hall/connect!)]
+        ; Room ID populated from the bashrc file
+        room-id (hall/get-test-room-id)
 
-        ; Fetch a list of group rooms
-        (println "group rooms" (hall/rooms-request! client))
+        ; Construct a client object and connect to Hall
+        client (->> (hall/client options) hall/connect!)]
 
-        ; Fetch a list of room members for a room
-        (println "room members" (hall/room-members-request! room-id client))
+    ; Fetch a list of group rooms
+    (println "group rooms" (hall/rooms-request! client))
 
-        ; Fetch a list of pair rooms
-        (println "pair rooms" (hall/chats-request! client))
+    ; Fetch a list of room members for a room
+    (println "room members" (hall/room-members-request! room-id client))
 
-        ; Send a message to a group room
-        (println (hall/send-message client
-                                    room-id
-                                    "group"
-                                    "Hello, world!"))))
+    ; Fetch a list of pair rooms
+    (println "pair rooms" (hall/chats-request! client))
 
+    ; Send a message to a group room
+    (println (hall/send-message client room-id "group" "Hello, world!"))))
+```
 
 ## License
 
