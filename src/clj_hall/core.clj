@@ -9,7 +9,7 @@
 
 ;; TODO: Disconnecting
 ;; TODO: Client-side heartbeat
-;; TODO: Sending messages
+;; TODO: Debugging
 ;; TODO: Finish documenting methods
 ;; TODO: Finish README
 

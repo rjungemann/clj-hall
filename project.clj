@@ -1,4 +1,4 @@
-(defproject clj-hall "0.1.0-SNAPSHOT"
+(defproject clj-hall "0.1.0"
   :description "A Hall client for Clojure."
   :url "http://github.com/thefifthcircuit/clj-hall"
   :license {:name "Eclipse Public License"
