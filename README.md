@@ -46,6 +46,47 @@ Following is an example script you can use to try out clj-hall.
     (comment (hall/disconnect! client))))
 ```
 
+## API
+
+* `(hall/client options)` - Create a new `client` object. The options hash can
+  contain the following:
+  * `:callbacks` - A hash whose keys are symbols and whose values are functions:
+    * `on-open` - A function with no parameters.
+    * `on-close` - A function with no parameters.
+    * `on-message` - A function with one parameter, a hash containing `:name`,
+      a new of an event, and `:data`, a hash containing data from the server.
+    * `on-error` - A funciton with one parameter, a Java Exception object.
+  * `:debug` - A boolean, which, when true, will log additional data during
+    operation.
+  * `:email` - An email address to login to Hall.
+  * `:password` - A password to login to Hall.
+  * `:base-url` - The base address to Hall (optional).
+  * `:api-url` - The API endpoint for Hall (optional).
+  * `:streaming-url` - Address for streaming information to Hall (optional).
+  * `:streaming-ws-url` - A websocket URL to Hall (optional).
+* `(hall/connect! client)` - Setup the client and connect to Hall
+  asynchronously. Will return a copied and modified client object.
+* `(hall/rooms-request! client)` Returns a clj-http response object containing
+  data about rooms the client has access to.
+* `(hall/room-members-request! room-id client)` Returns a clj-http response
+  object containing data about members of a room by room id.
+* `(hall/chats-request! client)` Returns a clj-http response object containing
+  data about pair rooms the client has access to.
+* `(hall/send-message! client)` Sends a message to a room of a certain type and
+  returns a clj-http response object.
+* `(hall/disconnect! client)` Disconnect the client from the socket.
+* `(hall/connect-blocking! client)` Connect to the socket synchronously,
+* `(hall/disconnect-blocking! client)` Disconnect from the socket synchronously,
+* `(hall/is-connected client)`, `(hall/is-connecting client)`,
+  `(hall/is-disconnected client)`, `(hall/is-disconnecting client)` - Examine
+  the status of the socket.
+
+## TODO
+
+Although we respond to server heartbeats with our own, the client should still
+ocassionaly do its own connection checking, like the
+[node-hall-client](http://github.com/Hall/node-hall-client) does.
+
 ## License
 
 Copyright © 2014 Roger Jungemann.

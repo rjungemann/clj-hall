@@ -7,6 +7,8 @@
 ;; TODO: Test `get-options`
 ;; TODO: Test `get-callbacks`
 ;; TODO: Test `get-callback`
+;; TODO: Test `get-is-debugging`
+;; TODO: Test `log`
 
 (deftest get-email-test
   (testing "has a default value"
@@ -147,7 +149,14 @@
 ;; TODO: Test `parse-socket-message`
 ;; TODO: Test `setup-socket`
 ;; TODO: Test `connect-to-socket!`
+;; TODO: Test `connect-to-socket-blocking!`
 
 ;; TODO: Test `connect!`
 ;; TODO: Test `disconnect!`
+;; TODO: Test `connect-blocking!`
+;; TODO: Test `disconnect-blocking!`
+;; TODO: Test `is-connected`
+;; TODO: Test `is-connecting`
+;; TODO: Test `is-closed`
+;; TODO: Test `is-closing`
 

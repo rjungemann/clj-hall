@@ -7,27 +7,18 @@
            (org.java_websocket.drafts Draft_17)
            (java.util TimerTask Timer)))
 
-;; TODO: Also allow for blocking connect and disconnect
-;; TODO: Expose methods for seeing if connected and if disconnected
-;; TODO: Client-side heartbeat
-;; TODO: Debugging
-;; TODO: Finish documenting methods
-;; TODO: Finish README
-
 ;; =============
 ;; Client object
 ;; =============
 
 (defn client
-  "Generate an empty Hall client data object"
+  "Generate an empty Hall client data object."
   [options]
   {:options options
    :cookie-store (clj-http.cookies/cookie-store)
-   :start-response nil
    :start-response-body-data nil
-   :signin-response nil
+   :signin-response-cookies nil
    :signin-response-body-data nil
-   :init-response nil
    :init-response-body nil
    :websocket nil
    :heartbeat-task nil})
@@ -37,14 +28,17 @@
 ;; ==============
 
 (defn get-options
+  "Get the options hash provided when creating the client."
   [client]
   (or (:options client) {}))
 
 (defn get-callbacks
+  "Get the callbacks provided in the options hash when creating the client."
   [client]
   (or (:callbacks (get-options client)) {}))
 
 (defn get-callback
+  "Get a particular callback by key."
   [client callback-key]
   (let [callbacks (get-callbacks client)
         callback (callback-key callbacks)
@@ -63,29 +57,44 @@
   [key]
   (System/getenv key))
 
+(defn get-is-debugging
+  "See if the client is running in debug mode. Checks the options hash, the
+   HALL_DEBUG env variable, or barring that, returns `false`."
+  ([]
+   (or (getenv "HALL_DEBUG") false))
+  ([client]
+   (or (:debug (get-options client)) (get-is-debugging))))
+
+(defn log
+  [client & rest]
+  (when (get-is-debugging client)
+    (apply println rest)))
+
 (defn get-email
-  "Fetch the user's hall email from the HALL_EMAIL environment variable."
+  "Fetch the user's hall email from the client options hash, the HALL_EMAIL
+   env variable, or barring that, returns a dummy email."
   ([]
    (or (getenv "HALL_EMAIL") "foo@hall-inc.com"))
   ([client]
    (or (:email (get-options client)) (get-email))))
 
 (defn get-password
-  "Fetch the user's hall password from the HALL_PASSWORD environment variable."
+  "Fetch the user's hall password from the options hash, HALL_PASSWORD env
+   variable, or barring that, returns a dummy password."
   ([]
    (or (getenv "HALL_PASSWORD") "barbaz"))
   ([client]
    (or (:password (get-options client)) (get-password))))
 
 (defn get-authenticity-token
-  "Once the user has made the start request, fetch the auth token out of the
-  client object."
+  "Get the auth token, which gets stored on the client object once it has made
+   a \"start\" request."
   [client]
   (get (:start-response-body-data client) "csrf_token"))
 
 (defn get-socket-id
-  "Once the user has made the init request, fetch the socket id out of the
-  client object."
+  "Get the socket id, which gets stored on the client object once it has made an
+   \"init\" request."
   [client]
   (let [body (:init-response-body client)]
     (if (nil? body)
@@ -93,33 +102,38 @@
       (first (clojure.string/split body #":")))))
 
 (defn get-user-session-id
-  "Once the user has signed in, fetch the session id out of the client object."
+  "Once the user has signed in, get the session id out of the client object."
   [client]
-  (:value ((:cookies (:signin-response client)) "user_session_id")))
+  (:value ((:signin-response-cookies client) "user_session_id")))
 
 (defn get-user-token
-  "Once the user has signed in, fetch the token out of the client object."
+  "Once the user has signed in, get the token out of the client object."
   [client]
   (get (:signin-response-body-data client) "token"))
 
 (defn get-user-uuid
-  "Once the user has signed in, fetch the uuid out of the client object."
+  "Once the user has signed in, get the uuid out of the client object."
   [client]
   (get (:signin-response-body-data client) "uuid"))
 
 (defn get-user-id
+  "Once the user has signed in, get the id out of the client object."
   [client]
   (get (:signin-response-body-data client) "_id"))
 
 (defn get-user-display-name
+  "Once the user has signed in, get the id out of the client object."
   [client]
   (or (get (:signin-response-body-data client) "display_name") "Hubot"))
 
 (defn get-user-photo-url
+  "Once the user has signed in, get the photo URL out of the client object."
   [client]
   (get (:signin-response-body-data client) "photo_url"))
 
 (defn get-member-data
+  "Given the data provided from signing in, create a \"member-data\" hash which
+   will be used when making further requests to the server."
   [client]
   {:uuid "globalHall"
    :member {:name (get-user-display-name client)
@@ -137,36 +151,39 @@
 ;; ====
 
 (defn get-base-url
-  "Fetch the Hall base URL from the NODE_HALL_URL environment variable."
+  "Get the Hall base URL from the options hash, the NODE_HALL_URL env variable,
+   or a default."
   ([]
    (or (getenv "NODE_HALL_URL") "https://hall.com"))
   ([client]
    (or (:base-url (get-options client)) (get-base-url))))
 
 (defn get-api-base-url
-  "Fetch the Hall API base URL from the NODE_HALL_URL environment variable."
+  "Get the Hall API base URL from the options hash, the NODE_HALL_URL env
+   variable, or a default."
   ([]
    (or (getenv "NODE_HALL_API_URL") "https://hall.com/api/1"))
   ([client]
    (or (:api-url (get-options client)) (get-api-base-url))))
 
 (defn get-stream-base-url
-  "Fetch the Hall stream base URL from the NODE_HALL_URL environment variable."
+  "Get the Hall stream base URL from the options hash, the NODE_HALL_URL env
+   variable, or a default."
   ([]
    (or (getenv "NODE_HALL_STREAMING_URL") "https://stream.hall.com"))
   ([client]
    (or (:streaming-url (get-options client)) (get-stream-base-url))))
 
 (defn get-stream-ws-base-url
-  "Fetch the Hall websocket base URL from the NODE_HALL_URL environment
-  variable."
+  "Get the Hall websocket base URL from the options hash, the NODE_HALL_URL env
+   variable, or a default."
   ([]
    (or (getenv "NODE_HALL_STREAMING_WS_URL") "wss://stream.hall.com"))
   ([client]
    (or (:streaming-ws-url (get-options client)) (get-stream-ws-base-url))))
 
 (defn get-stream-base-url-with-params
-  "Fetch the Hall stream URL with all necessary params."
+  "Get the Hall stream URL with all necessary params."
   [client]
   (let [user-session-id (get-user-session-id client)
         uuid (get-user-uuid client)
@@ -180,7 +197,7 @@
          "&session=" session)))
 
 (defn get-stream-ws-url-with-params
-  "Fetch the Hall websocket URL with all necessary params."
+  "Get the Hall websocket URL with all necessary params."
   [client]
   (let [user-session-id (get-user-session-id client)
         uuid (get-user-uuid client)
@@ -195,6 +212,7 @@
          "&session=" session)))
 
 (defn get-test-room-id
+  "Get a test room id from an environment variable or use a dummy value."
   []
   (or (System/getenv "HALL_TEST_ROOM_ID") "12345"))
 
@@ -214,8 +232,7 @@
         response (clj-http.client/get response-url response-options)
         response-body (:body response)
         response-body-data (clojure.data.json/read-str response-body)]
-    (assoc client :start-response response
-                  :start-response-body-data response-body-data)))
+    (assoc client :start-response-body-data response-body-data)))
 
 (defn signin-request!
   "Make a request to Hall to signin the user."
@@ -231,9 +248,10 @@
                           :headers response-headers
                           :cookie-store (:cookie-store client)}
         response (clj-http.client/post response-url response-options)
+        response-cookies (:cookies response)
         response-body (:body response)
         response-body-data (clojure.data.json/read-str response-body)]
-    (assoc client :signin-response response
+    (assoc client :signin-response-cookies response-cookies
                   :signin-response-body-data response-body-data)))
 
 (defn init-request!
@@ -244,8 +262,7 @@
                           :cookie-store (:cookie-store client)}
         response (clj-http.client/get response-url response-options)
         response-body (:body response)]
-    (assoc client :init-response response
-                  :init-response-body response-body)))
+    (assoc client :init-response-body response-body)))
 
 ;; ======================
 ;; Public request methods
@@ -281,6 +298,7 @@
 ;; ===============
 
 (defn send-message!
+  "Send a message to a room on Hall using a POST request."
   ([client room-id room-type message]
    (send-message! client room-id room-type message nil))
   ([client room-id room-type message correspondent]
@@ -307,6 +325,7 @@
 ;; ==============
 
 (defn socket-message
+  "Construct a socket message."
   ([level name data]
    (if (and (nil? name) (nil? data))
      (str level "::/room")
@@ -317,34 +336,43 @@
    (socket-message level nil nil)))
 
 (defn send-to-socket!
-  [websocket data]
-  (println "Sending message" data)
-  (.send websocket data))
+  "Send a socket message over the socket."
+  [client data]
+  (log client "Sending message" data)
+  (.send (:websocket client) data))
 
 (defn send-heartbeat!
+  "Send a heartbeat message over the socket to ensure that the server doesn't
+   think we've disconnected."
   [websocket]
   (let [ping-message (socket-message 2)]
-    (println "Sending heartbeat" ping-message)
+    (log client "Sending heartbeat" ping-message)
     (.send websocket ping-message)))
 
 (defn heartbeat-task
+  "Construct a heartbeat task, which we will trigger every 30 seconds."
   [websocket-atom]
   (proxy [TimerTask] []
     (run []
       (send-heartbeat! (:websocket @websocket-atom)))))
 
 (defn start-heartbeat-task!
+  "Start the heartbeat task."
   [task]
   (. (new Timer) (schedule task (long 0) (long 30000))))
 
 (defn join-room-over-socket!
-  [websocket client]
+  "Join a room over socket so that we will start receiving socket messages from
+   Hall."
+  [client]
   (let [data (get-member-data client)
         message (socket-message 5 "join room" data)]
-    (println "Joining room" message)
-    (send-to-socket! websocket message)))
+    (log client "Joining room" message)
+    (send-to-socket! client message)))
 
 (defn parse-socket-message
+  "When we receive a socket message from hall, parse it into an event name and
+   event data as a hash."
   [message]
   (let [matches (re-matches #"(.*)?::(.*?):(.*)" message)
         id (or (nth matches 1) "")
@@ -368,14 +396,14 @@
                          [(new URI (get-stream-ws-url-with-params client))
                           (new Draft_17)]
                     (onOpen [handshake-data]
-                      (println "Socket opened" handshake-data)
+                      (log client "Socket opened" handshake-data)
                       (swap! websocket-atom assoc :websocket this)
                       (send-to-socket! this (socket-message 1))
                       (start-heartbeat-task! task)
                       (join-room-over-socket! this client)
                       ((get-callback client :on-open)))
                     (onClose [code reason is-remote]
-                      (println "Socket closed" code reason is-remote)
+                      (log client "Socket closed" code reason is-remote)
                       ((get-callback client :on-close)))
                     (onMessage [message]
                       (let [data (parse-socket-message message)]
@@ -383,14 +411,21 @@
                           nil
                           ((get-callback client :on-message) data))))
                     (onError [exception]
-                      (println "Socket error" exception)
+                      (log client "Socket error" exception)
                       ((get-callback client :on-error exception))))]
     (assoc client :websocket websocket
                   :heartbeat-task task)))
 
 (defn connect-to-socket!
+  "Connect to the socket asynchronously."
   [client]
   (.connect (:websocket client))
+  client)
+
+(defn connect-to-socket-blocking!
+  "Connect to the socket synchronously."
+  [client]
+  (.connectBlocking (:websocket client))
   client)
 
 ;; =====================
@@ -398,6 +433,8 @@
 ;; =====================
 
 (defn connect!
+  "Given a constructed client, make all the requests necessary to connect to
+   Hall and then connect asynchronously."
   [client]
   (->> client start-request!
               signin-request!
@@ -405,10 +442,47 @@
               setup-socket
               connect-to-socket!))
 
+(defn connect-blocking!
+  "Given a constructed client, make all the requests necessary to connect to
+   Hall and then connect synchronously."
+  [client]
+  (->> client start-request!
+              signin-request!
+              init-request!
+              setup-socket
+              connect-to-socket-blocking!))
+
 (defn disconnect!
+  "Disconnect from Hall asynchronously."
   [client]
   (.close (:websocket client))
   client)
+
+(defn disconnect-blocking!
+  "Disconnect from Hall synchronously."
+  [client]
+  (.closeBlocking (:websocket client))
+  client)
+
+(defn is-connected
+  "Check to see if we are connected to the socket."
+  [client]
+  (.isOpen client))
+
+(defn is-connecting
+  "Check to see if we are connecting to the socket."
+  [client]
+  (.isConnecting client))
+
+(defn is-disconnected
+  "Check to see if we are disconnecting from the socket."
+  [client]
+  (.isClosed client))
+
+(defn is-disconnecting
+  "Check to see if we have disconnected from the socket."
+  [client]
+  (.isClosing client))
 
 ;; ====
 ;; Main
