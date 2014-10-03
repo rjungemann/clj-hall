@@ -1,14 +1,23 @@
 # clj-http
 
-Connect to Hall (http://hall.com) from Clojure.
+Connect to Hall (http://hall.com) from Clojure. This is capable of doing
+everything the [node-hall-client](http://github.com/Hall/node-hall-client), and
+a few extra things as well.
+
+## What can you use this for?
+
+* Listen for a user's name, or for them to come online.
+* Bots (Lisp has a long history in AI research, so a lot of possibility there)
+* Custom integration with third-party services
+* Runs on JVM, so can leverage all of the existing JVM infrastructure, yet can
+  deploy on (for example) Heroku.
 
 ## Usage
 
+You can modify some environment variables and use them to run a test script.
 First, copy `bashrc.example` to `bashrc` and modify to your needs. Then, run
-`source bashrc` to set environment variables.
-
-Next, you can run `lein run` to run a test script which will use your
-environment variables.
+`source bashrc` to set environment variables. Next, you can run `lein run` to
+run a test script which will use your environment variables.
 
 Following is an example script you can use to try out clj-hall.
 
@@ -44,6 +53,20 @@ Following is an example script you can use to try out clj-hall.
     
     ; Disconnect the client (commented out)
     (comment (hall/disconnect! client))))
+```
+
+When setting up the client, it is often preferable to use the options hash to
+set the email and password, like so:
+
+```clojure
+(->> (hall/client {:email "foo@hall-inc.com" :password "blah"}) hall/connect)
+```
+
+Note the use of the `thrush` operator, which makes it simpler to construct your
+client object and apply operations on it. It is equivalent to:
+
+```clojure
+(hall/connect (hall/client {:email "foo@hall-inc.com" :password "blah"}))
 ```
 
 ## API
